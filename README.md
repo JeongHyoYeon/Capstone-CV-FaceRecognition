@@ -20,9 +20,18 @@ embedding으로 cosine similarity를 계산한 후
 ### ✅이용 모델
 - MTCNN (face detection)
 - Arcface (face embedding)
-(사진 첨부하기)
+(이론 사진 첨부하기)
 
 
+### ✅결과 시각화
+1. T-SNE를 이용해 분포 확인
+(이미지 추가)
+2. grouping 결과 시각화
+(이미지 추가)
+
+### ✅ data structure
+아래 내용과 동일한  .ipynb 파일에 docstring으로 정리되어있습니다.
+(노션에 있는거 옮기기)
 
 ### ✅참고 논문 & 깃허브
 
