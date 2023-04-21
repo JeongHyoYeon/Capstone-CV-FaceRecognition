@@ -11,9 +11,30 @@ embedding으로 cosine similarity를 계산한 후
 이를 이용해 동일인물사진끼리 grouping하는 코드입니다.
 
 
-- <h4>FaceRecognition_Floder.ipynb</h4> : input이 images/group_name/user_name 폴더일때 코드
+- <h4>[ver1] FaceRecognition_Floder.ipynb</h4> : input이 images/group_name/user_name 폴더일때 코드
 
-- <h4>FaceRecognition_URL.ipynb</h4> : Backend 서버에서 AWS s3에 이미지를 저장시키고그 이미지 url을 dictionary 형태로 input으로 받아 Face Recognition 한 후 grouping 하는 코드
+- <h4>[ver2] FaceRecognition_URL.ipynb</h4> : Backend 서버에서 AWS s3에 이미지를 저장시키고 그 이미지 url을 dictionary 형태로 input으로 받아 Face Recognition 한 후 grouping 하는 코드
+
+- <h4>[최종 ver] face_recognition.py </h4> : 리펙토링, 모듈화 마친 코드
+
+### ✅face_recognition.py 실행방법
+폴더구조를 아래처럼 두고
+```
+api
+ㄴ함수_호출할_파일.py
+ㄴface_recognition
+  ㄴface_recognition.py  
+  ㄴbackbone.py
+  ㄴcheckpoint
+    ㄴbackbone_ir50_ms1m_epoch120.pth
+```
+
+함수_호출할_파일.py에서 아래처럼 함수 호출로 실행.
+```
+from face_recognition.face_recognition import face_recognition
+
+groups, images = face_recognition(images)
+```
 
 
 ### ✅이용 모델
