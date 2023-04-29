@@ -1,4 +1,4 @@
-# Face Recognition
+# Face Recognition 얼굴별 폴더 분류
 
 
 ### ✅FaceRecognition.ipynb
