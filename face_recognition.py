@@ -15,7 +15,7 @@ import torchvision.datasets as datasets
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from .backbone import Backbone
+from backbone import Backbone
 
 #----------------------------------------------------------
 #                        functions 
@@ -307,12 +307,12 @@ def face_recognition(images):
                       "group_idx" : [1, 4, 9] (해당 사진이 속한 group의 list를 전송), 얼굴이 없으면 [-2]. 얼굴이 있는데 group에 넣기엔 너무 한장일 경우 [-1].
                     }]
     """
-    #base_folder = "/content/drive/MyDrive/Capstone_Face_Test/"
+    base_folder = "/content/drive/MyDrive/Capstone_Face_Test/"
     cos_similarity_threshold = 0.45
 
     input_size = 112
-    #crop_base_folder = base_folder + "crop_images/"
-    crop_base_folder = "face_recognition/crop_images/"
+    crop_base_folder = base_folder + "crop_images/"
+    #crop_base_folder = "face_recognition/crop_images/"
     crop_folder = crop_base_folder + "crop/"
 
     if not os.path.isdir(crop_base_folder):
@@ -349,7 +349,7 @@ def face_recognition(images):
 
     faces, embeddings = get_embeddings(
             data_root = crop_base_folder ,
-            model_root = "face_recognition/checkpoint/backbone_ir50_ms1m_epoch120.pth",
+            model_root = "checkpoint/backbone_ir50_ms1m_epoch120.pth",
             input_size = [input_size, input_size],
         )
     print("faces 길이 = ", len(faces))
