@@ -20,7 +20,7 @@ from .backbone import Backbone
 #----------------------------------------------------------
 #                        functions 
 #----------------------------------------------------------
-def face_crop(img_idx, pixels, images, crop_folder, url_dict, required_size=(112, 112)): 
+def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)): 
     """
     한 이미지에 대해 MTCNN 모델로 Face Detection 해서 crop한 사진을 crop_folder에 저장
 
@@ -29,7 +29,6 @@ def face_crop(img_idx, pixels, images, crop_folder, url_dict, required_size=(112
       pixels (list): 얼굴을 detect할 이미지를 pixel list로 바꾼 것
       images (list) : img idx와 img url이 들은 list
       crop_folder (string) : crop 이미지를 저장할 path
-      url_dict (dictionary) : crop img path로 original url을 찾을 수 있게 만든 dict. key = crop image path, value = images idx
       required_size (tuple) : default(112, 112)
 
     Returns:
@@ -38,8 +37,6 @@ def face_crop(img_idx, pixels, images, crop_folder, url_dict, required_size=(112
                       "url" : S3에서 생성한 url
                       "group_idx" : 얼굴이 없는 사진에 대해 images["group_idx"] = -2 을 추가해 images 반환
                     }]
-
-      url_dict (dictionary) : crop img path로 original url을 찾을 수 있게 만든 dict. key = crop image path, value = images idx
     """
 
     # FaceDetection, 얼굴탐지
@@ -67,10 +64,7 @@ def face_crop(img_idx, pixels, images, crop_folder, url_dict, required_size=(112
         print("crop_path = ", crop_path)
         image.save(crop_path)
 
-        # dictionary를 이용해 crop_path와 original_image_idx mapping
-        url_dict[crop_path] = img_idx
-
-    return images, url_dict
+    return images
 
 
 def alignment(): 
@@ -172,7 +166,7 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
     return faces, embeddings
 
 
-def grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_threshold) : 
+def grouping(faces, images, cosine_similaritys, cos_similarity_threshold) : 
     """
     cosine_similarity를 이용해 유사한 얼굴끼리 grouping하는 함수
 
@@ -188,10 +182,10 @@ def grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_thresho
                       "url" : S3에서 생성한 url
                       "group_idx" : 얼굴이 없는 사진에 대해서만 -2 들은 상태. //여기를 완성시키는 것이 최종 목표
                     }]
-
-      url_dict (dictionary) : crop img path로 original url을 찾을 수 있게 만든 dict. key = crop image path, value = images idx
       
       cosine_similaritys (2차원 list) : cosine_similarity[i][j]로 접근 가능
+      
+      cos_similarity_threshold (float) : cosine similarity 몇이상을 같은 group으로 묶을지를 정하는 threshold
 
     Returns:
       groups (list): [{
@@ -209,7 +203,6 @@ def grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_thresho
                       "group_idx" : [1, 4, 9] (해당 사진이 속한 group의 list를 전송), 얼굴이 없으면 [-2]. 얼굴이 있는데 group에 넣기엔 너무 한장일 경우 [-1].
                     }]
 
-      cos_similarity_threshold (float) : cosine similarity 몇이상을 같은 group으로 묶을지를 정하는 threshold
     """
     # face1 : 비교 기준이 되는 이미지
     # face2 : 지금 그룹을 정해주고 싶은 이미지
@@ -224,7 +217,9 @@ def grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_thresho
 
             if( not is_already_in_group and cosine_similarity > cos_similarity_threshold ) :
               crop_path = face2["crop_path"]
-              original_images_idx = url_dict[crop_path]
+              original_images_filename = os.path.split(crop_path)[1] # 전체 경로에서 file name만 parsing
+              original_images_filename = original_images_filename.split('.')[0] #1_3.jpg에서 "1_3" parsing
+              original_images_idx = int(original_images_filename.split('_')[0]) #1_3에서 "1" parsing
 
               # images에 group idx 넣어주기
               if "group_idx" in images[original_images_idx] :
@@ -246,7 +241,9 @@ def grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_thresho
         # Case2 : 못 넣었으면 새로운 그룹에 추가
         if not is_already_in_group :
           crop_path = face2["crop_path"]
-          original_images_idx = url_dict[crop_path]
+          original_images_filename = os.path.split(crop_path)[1] # 전체 경로에서 file name만 parsing
+          original_images_filename = original_images_filename.split('.')[0] #1_3.jpg에서 "1_3" parsing
+          original_images_idx = int(original_images_filename.split('_')[0]) #1_3에서 "1" parsing
 
           # images에 group idx 넣어주기
           if "group_idx" in images[original_images_idx] :
@@ -310,12 +307,11 @@ def face_recognition(images):
                       "group_idx" : [1, 4, 9] (해당 사진이 속한 group의 list를 전송), 얼굴이 없으면 [-2]. 얼굴이 있는데 group에 넣기엔 너무 한장일 경우 [-1].
                     }]
     """
-    #base_folder = "/content/drive/MyDrive/Capstone_Face_Test"
+    #base_folder = "/content/drive/MyDrive/Capstone_Face_Test/"
     cos_similarity_threshold = 0.45
 
-    url_dict = {}
     input_size = 112
-    #crop_base_folder = base_folder + "/crop_images"
+    #crop_base_folder = base_folder + "crop_images/"
     crop_base_folder = "face_recognition/crop_images/"
     crop_folder = crop_base_folder + "crop/"
 
@@ -342,7 +338,7 @@ def face_recognition(images):
       pixels = np.asarray(img)  
 
       # face detect 얼굴 탐지
-      images, url_dict = face_crop(idx, pixels, images, crop_folder, url_dict)
+      images = face_crop(idx, pixels, images, crop_folder)
 
 
     #----------------------------------------------------------
@@ -376,6 +372,6 @@ def face_recognition(images):
     print("\n\n")
     print("Step4. grouping\n")
 
-    groups, images = grouping(faces, images, url_dict, cosine_similaritys, cos_similarity_threshold)
+    groups, images = grouping(faces, images, cosine_similaritys, cos_similarity_threshold)
     
     return groups, images
