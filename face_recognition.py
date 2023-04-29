@@ -15,7 +15,7 @@ import torchvision.datasets as datasets
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from face_recognition.backbone import Backbone
+from .backbone import Backbone
 
 #----------------------------------------------------------
 #                        functions 
@@ -62,12 +62,12 @@ def face_crop(img_idx, pixels, images, crop_folder, url_dict, required_size=(112
         image = image.resize(required_size)
 
         # crop 폴더에 이미지 저장
-        crop_path = crop_folder + '/' + str(img_idx) + "_" + str(crop_file_num) + ".jpg" 
+        crop_path = crop_folder + str(img_idx) + "_" + str(crop_file_num) + ".jpg"
         crop_file_num = crop_file_num + 1
         print("crop_path = ", crop_path)
         image.save(crop_path)
 
-        # dictionary를 이용해 crop_path와 original_image_idx mapping 
+        # dictionary를 이용해 crop_path와 original_image_idx mapping
         url_dict[crop_path] = img_idx
 
     return images, url_dict
@@ -316,8 +316,8 @@ def face_recognition(images):
     url_dict = {}
     input_size = 112
     #crop_base_folder = base_folder + "/crop_images"
-    crop_base_folder = "./crop_images"
-    crop_folder = crop_base_folder + "/crop"
+    crop_base_folder = "face_recognition/crop_images/"
+    crop_folder = crop_base_folder + "crop/"
 
     if not os.path.isdir(crop_base_folder):
         os.mkdir(crop_base_folder)
@@ -353,7 +353,7 @@ def face_recognition(images):
 
     faces, embeddings = get_embeddings(
             data_root = crop_base_folder ,
-            model_root = "./face_recognition/checkpoint/backbone_ir50_ms1m_epoch120.pth",
+            model_root = "face_recognition/checkpoint/backbone_ir50_ms1m_epoch120.pth",
             input_size = [input_size, input_size],
         )
     print("faces 길이 = ", len(faces))
