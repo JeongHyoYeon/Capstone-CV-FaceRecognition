@@ -15,6 +15,14 @@ import torchvision.datasets as datasets
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 
+import sys
+from pathlib import Path
+FILE = Path(__file__).resolve()
+BASE_PATH = FILE.parents[0]
+
+if str(BASE_PATH) not in sys.path:
+    sys.path.append(str(BASE_PATH))  # add YOLO_CLONE_PATH to PATH
+
 from face_crop import face_crop
 #from face_alignment import face_alignment
 from get_embeddings import get_embeddings
@@ -51,9 +59,8 @@ def run_face_recog(images):
     """
     input_size = 112
     cos_similarity_threshold = 0.45
-    face_recog_folder = "/content/drive/MyDrive/Capstone_Face_Test/"
 
-    crop_base_folder = os.path.join(face_recog_folder, "crop_images/")
+    crop_base_folder = os.path.join(BASE_PATH, "crop_images/")
     crop_folder = os.path.join(crop_base_folder, "crop/")
 
     if not os.path.isdir(crop_base_folder):
