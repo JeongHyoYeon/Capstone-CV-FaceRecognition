@@ -1,6 +1,4 @@
-"""
-user에게 받은 사진을 AWS S3에 저장하고 그 url을 input으로 받는다.
-"""
+# user에게 받은 사진을 AWS S3에 저장하고 그 url을 input으로 받는다.
 images = [
     {
         "id": 1,
@@ -56,6 +54,7 @@ images = [
     }
 ]
 
+# run_face_recog 호출
 from face_recognition.main import run_face_recog
 
 groups, group_idx_list, images = run_face_recog(images)

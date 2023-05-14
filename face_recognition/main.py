@@ -41,6 +41,8 @@ def run_face_recog(images):
                       "cosine_similarity_list" : 그 유사도가 얼마였는지 (-1 이면 맨 처음 추가된 이미지인 것)
                     }]
 
+      group_idx_list (list) : 유효한 group의 idx만 들어있는 list. (-2, -1은 넣지 않았다)
+      
       images (list) : [{
                       "id" : DB에서 이미지 id
                       "url" : S3에서 생성한 url

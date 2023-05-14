@@ -49,7 +49,7 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
 
     # chekpoint에서 backbone weight 불러오기
     backbone = Backbone(input_size)
-    backbone.load_state_dict(torch.load(model_root, map_location=torch.device("cpu")))
+    backbone.load_state_dict(torch.load(model_root, map_location=torch.device(device)))
     backbone.to(device)
     backbone.eval()
 
@@ -59,7 +59,8 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
         for idx, (image, _) in enumerate(
                 tqdm(loader, desc="Create embeddings matrix", total=len(loader)),
         ):
-            embeddings[idx, :] = F.normalize(backbone(image.to(device))).cpu()
+            #embeddings[idx, :] = F.normalize(backbone(image.to(device))).cpu()
+            embeddings[idx, :] = F.normalize(backbone(image.to(device)))
 
     # faces 에 crop_path, face_idx, face 저장
     i = 0
