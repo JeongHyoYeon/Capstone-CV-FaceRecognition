@@ -56,6 +56,6 @@ images = [
     }
 ]
 
-from face_recognition.run_face_recog import *
+from face_recognition.main import run_face_recog
 
 groups, group_idx_list, images = run_face_recog(images)
