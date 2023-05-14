@@ -17,6 +17,7 @@ import torchvision.transforms as transforms
 
 import sys
 from pathlib import Path
+
 FILE = Path(__file__).resolve()
 BASE_PATH = FILE.parents[0]
 
@@ -24,9 +25,10 @@ if str(BASE_PATH) not in sys.path:
     sys.path.append(str(BASE_PATH))  # add YOLO_CLONE_PATH to PATH
 
 from face_crop import face_crop
-#from face_alignment import face_alignment
+# from face_alignment import face_alignment
 from get_embeddings import get_embeddings
 from face_grouping import face_grouping
+
 
 def run_face_recog(images):
     """
@@ -50,7 +52,7 @@ def run_face_recog(images):
                     }]
 
       group_idx_list (list) : 유효한 group의 idx만 들어있는 list. (-2, -1은 넣지 않았다)
-      
+
       images (list) : [{
                       "id" : DB에서 이미지 id
                       "url" : S3에서 생성한 url
@@ -59,6 +61,7 @@ def run_face_recog(images):
     """
     input_size = 112
     cos_similarity_threshold = 0.45
+    # face_recog_folder = "/content/drive/MyDrive/Capstone_Face_Test/"
 
     crop_base_folder = os.path.join(BASE_PATH, "crop_images/")
     crop_folder = os.path.join(crop_base_folder, "crop/")
@@ -76,6 +79,7 @@ def run_face_recog(images):
     #                      Step1. face detect
     # ----------------------------------------------------------
     print("Step1. face detect\n")
+
     folder_no_face = True
 
     for idx, image in enumerate(images):
@@ -88,10 +92,10 @@ def run_face_recog(images):
         # face detect 얼굴 탐지
         images, file_no_face = face_crop(idx, pixels, images, crop_folder)
 
-        if(folder_no_face==True and file_no_face==False):
-            folder_no_face==True
+        if (folder_no_face == True and file_no_face == False):
+            folder_no_face = False
 
-    if(folder_no_face==True):
+    if (folder_no_face == True):
         return -1, -1, -1
 
     # ----------------------------------------------------------
@@ -102,11 +106,11 @@ def run_face_recog(images):
 
     faces, embeddings = get_embeddings(
         data_root=crop_base_folder,
-        model_root="checkpoint/backbone_ir50_ms1m_epoch120.pth",
+        model_root=os.path.join(BASE_PATH, "checkpoint/backbone_ir50_ms1m_epoch120.pth"),
         input_size=[input_size, input_size],
     )
-    #print("faces 길이 = ", len(faces))
-    #print("embeddings 길이 = ", len(embeddings))
+    # print("faces 길이 = ", len(faces))
+    # print("embeddings 길이 = ", len(embeddings))
 
     # ----------------------------------------------------------
     #                      Step3. cos_similarity 계산

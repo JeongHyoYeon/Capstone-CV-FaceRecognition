@@ -1,3 +1,6 @@
+import os
+import cv2
+
 def face_grouping(faces, images, cosine_similaritys, cos_similarity_threshold):
     """
     cosine_similarity를 이용해 유사한 얼굴끼리 grouping하는 함수
@@ -104,10 +107,10 @@ def face_grouping(faces, images, cosine_similaritys, cos_similarity_threshold):
     print(len(groups))
 
     # group len이 1인건 group index -1 으로 변경
-    print("사진 한장뿐인 그룹 목록")
+    #print("사진 한장뿐인 그룹 목록")
     for group_idx, group in enumerate(groups):
         if len(group["original_images_idx_list"]) == 1:
-            print(group_idx)
+            #print(group_idx)
             images_idx = group["original_images_idx_list"][0]
             images[images_idx]["group_idx"].remove(group_idx)
             group_idx_list.remove(group_idx)

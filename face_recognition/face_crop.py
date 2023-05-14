@@ -62,7 +62,7 @@ def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)):
             # crop 폴더에 이미지 저장
             crop_path = crop_folder + str(img_idx) + "_" + str(crop_file_num) + ".jpg"
             crop_file_num = crop_file_num + 1
-            print("crop_path = ", crop_path)
+            #print("crop_path = ", crop_path)
             image.save(crop_path)
 
     return images, noFace
