@@ -17,10 +17,11 @@ import torchvision.transforms as transforms
 
 from backbone import Backbone
 
-#----------------------------------------------------------
+
+# ----------------------------------------------------------
 #                        functions 
-#----------------------------------------------------------
-def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)): 
+# ----------------------------------------------------------
+def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)):
     """
     한 이미지에 대해 MTCNN 모델로 Face Detection 해서 crop한 사진을 crop_folder에 저장
 
@@ -45,10 +46,10 @@ def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)):
     results = detector.detect_faces(pixels)
 
     # 얼굴이 없는 이미지
-    if len(results)==0:
-      images[img_idx]["group_idx"] = [-2]
+    if len(results) == 0:
+        images[img_idx]["group_idx"] = [-2]
 
-    # 얼굴이 1개이상인 이미지 
+    # 얼굴이 1개이상인 이미지
     crop_file_num = 1
     for i in range(len(results)):
         x1, y1, width, height = results[i]['box']
@@ -67,20 +68,20 @@ def face_crop(img_idx, pixels, images, crop_folder, required_size=(112, 112)):
     return images
 
 
-def alignment(): 
+def alignment():
     """
     얼굴 각도 조절하는 함수 (미완성)
     robust하게 하려면 alignment 진행해야하지만
     이거까지 넣으면 속도가 너무 느려질 것 같아서 일부러 안넣음
 
     Args:
-      
+
 
     Returns:
-      
+
 
     Details:
-  
+
     """
 
 
@@ -98,7 +99,7 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
       faces (list): [{
                       "crop_path" : crop_path
                       "face_idx" : 전체 얼굴 중에서 몇번째 얼굴인지 (이게 all_faces의 idx랑 동일함)
-                      "face" : [얼굴 pixel RGB] 
+                      "face" : [얼굴 pixel RGB]
                     }]
 
                     cf) faces에 들어있는 순서랑 embeddings에 들어있는 순서를 맞춰야해서 faces를 face_crop()아니고 get_embeddings()에서 호출함.
@@ -141,7 +142,7 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
     embeddings = np.zeros([len(loader.dataset), embedding_size])
     with torch.no_grad():
         for idx, (image, _) in enumerate(
-            tqdm(loader, desc="Create embeddings matrix", total=len(loader)),
+                tqdm(loader, desc="Create embeddings matrix", total=len(loader)),
         ):
             embeddings[idx, :] = F.normalize(backbone(image.to(device))).cpu()
 
@@ -149,24 +150,24 @@ def get_embeddings(data_root, model_root, input_size=[112, 112], embedding_size=
     i = 0
     faces = []
     for crop_path, _ in dataset.samples:
-      face = cv2.imread(crop_path)
-      faces.append(
-          {
-            "crop_path":crop_path, 
-            "face_idx" : i,
-            "face": face
-          }
-      )
-      i = i + 1
+        face = cv2.imread(crop_path)
+        faces.append(
+            {
+                "crop_path": crop_path,
+                "face_idx": i,
+                "face": face
+            }
+        )
+        i = i + 1
 
     #  faces에 embeddings 넣기
     for i, embedding in enumerate(embeddings):
-      faces[i]["embedding"] = embedding
+        faces[i]["embedding"] = embedding
 
     return faces, embeddings
 
 
-def grouping(faces, images, cosine_similaritys, cos_similarity_threshold) : 
+def grouping(faces, images, cosine_similaritys, cos_similarity_threshold):
     """
     cosine_similarity를 이용해 유사한 얼굴끼리 grouping하는 함수
 
@@ -174,7 +175,7 @@ def grouping(faces, images, cosine_similaritys, cos_similarity_threshold) :
       faces (list): [{
                       "crop_path" : crop_path
                       "face_idx" : 전체 얼굴 중에서 몇번째 얼굴인지 (이게 all_faces의 idx랑 동일함)
-                      "face" : [얼굴 pixel RGB] 
+                      "face" : [얼굴 pixel RGB]
                     }]
 
       images (list) : [{
@@ -182,9 +183,9 @@ def grouping(faces, images, cosine_similaritys, cos_similarity_threshold) :
                       "url" : S3에서 생성한 url
                       "group_idx" : 얼굴이 없는 사진에 대해서만 -2 들은 상태. //여기를 완성시키는 것이 최종 목표
                     }]
-      
+
       cosine_similaritys (2차원 list) : cosine_similarity[i][j]로 접근 가능
-      
+
       cos_similarity_threshold (float) : cosine similarity 몇이상을 같은 group으로 묶을지를 정하는 threshold
 
     Returns:
@@ -210,87 +211,86 @@ def grouping(faces, images, cosine_similaritys, cos_similarity_threshold) :
     # face2 : 지금 그룹을 정해주고 싶은 이미지
     groups = []
     group_idx_list = []
-    for face2_idx, face2 in enumerate(faces) : # 해당 얼굴에 대해
+    for face2_idx, face2 in enumerate(faces):  # 해당 얼굴에 대해
         is_already_in_group = False
 
         # Case1 : 기존 그룹 탐색
-        for group_idx, group in enumerate(groups): # 각 그룹마다
-          for i, face1_idx in enumerate(group["face2_idx_list"]) : #그 그룹에 들어있는 얼굴마다
-            cosine_similarity = cosine_similaritys[face1_idx][face2_idx]
+        for group_idx, group in enumerate(groups):  # 각 그룹마다
+            for i, face1_idx in enumerate(group["face2_idx_list"]):  # 그 그룹에 들어있는 얼굴마다
+                cosine_similarity = cosine_similaritys[face1_idx][face2_idx]
 
-            if( not is_already_in_group and cosine_similarity > cos_similarity_threshold ) :
-              crop_path = face2["crop_path"]
-              original_images_filename = os.path.split(crop_path)[1] # 전체 경로에서 file name만 parsing
-              original_images_filename = original_images_filename.split('.')[0] #1_3.jpg에서 "1_3" parsing
-              original_images_idx = int(original_images_filename.split('_')[0]) #1_3에서 "1" parsing
+                if (not is_already_in_group and cosine_similarity > cos_similarity_threshold):
+                    crop_path = face2["crop_path"]
+                    original_images_filename = os.path.split(crop_path)[1]  # 전체 경로에서 file name만 parsing
+                    original_images_filename = original_images_filename.split('.')[0]  # 1_3.jpg에서 "1_3" parsing
+                    original_images_idx = int(original_images_filename.split('_')[0])  # 1_3에서 "1" parsing
 
-              # images에 group idx 넣어주기
-              if group_idx not in group_idx_list:
-                group_idx_list.append(group_idx) 
+                    # images에 group idx 넣어주기
+                    if group_idx not in group_idx_list:
+                        group_idx_list.append(group_idx)
 
-              if "group_idx" in images[original_images_idx] :
-                images[original_images_idx]["group_idx"].append(group_idx)
-              else :
-                images[original_images_idx]["group_idx"] = [group_idx]
+                    if "group_idx" in images[original_images_idx]:
+                        images[original_images_idx]["group_idx"].append(group_idx)
+                    else:
+                        images[original_images_idx]["group_idx"] = [group_idx]
 
-              # groups 갱신
-              group["original_images_idx_list"].append(original_images_idx) #dictionary에서 원래 url idx 찾아넣기
-              group["crop_path_list"].append(crop_path)
-              group["face_list"].append(face2["face"])
-              group["face2_idx_list"].append(face2_idx)
-              group["face1_idx_list"].append(face1_idx)
-              group["cosine_similarity_list"].append(cosine_similarity)
+                    # groups 갱신
+                    group["original_images_idx_list"].append(original_images_idx)  # dictionary에서 원래 url idx 찾아넣기
+                    group["crop_path_list"].append(crop_path)
+                    group["face_list"].append(face2["face"])
+                    group["face2_idx_list"].append(face2_idx)
+                    group["face1_idx_list"].append(face1_idx)
+                    group["cosine_similarity_list"].append(cosine_similarity)
 
-              is_already_in_group = True
-            
+                    is_already_in_group = True
 
         # Case2 : 못 넣었으면 새로운 그룹에 추가
-        if not is_already_in_group :
-          crop_path = face2["crop_path"]
-          original_images_filename = os.path.split(crop_path)[1] # 전체 경로에서 file name만 parsing
-          original_images_filename = original_images_filename.split('.')[0] #1_3.jpg에서 "1_3" parsing
-          original_images_idx = int(original_images_filename.split('_')[0]) #1_3에서 "1" parsing
+        if not is_already_in_group:
+            crop_path = face2["crop_path"]
+            original_images_filename = os.path.split(crop_path)[1]  # 전체 경로에서 file name만 parsing
+            original_images_filename = original_images_filename.split('.')[0]  # 1_3.jpg에서 "1_3" parsing
+            original_images_idx = int(original_images_filename.split('_')[0])  # 1_3에서 "1" parsing
 
-          # images에 group idx 넣어주기
-          if len(groups) not in group_idx_list:
-            group_idx_list.append(len(groups)) 
+            # images에 group idx 넣어주기
+            if len(groups) not in group_idx_list:
+                group_idx_list.append(len(groups))
 
-          if "group_idx" in images[original_images_idx] :
-            images[original_images_idx]["group_idx"].append(len(groups))
-          else :
-            images[original_images_idx]["group_idx"] = [len(groups)]
+            if "group_idx" in images[original_images_idx]:
+                images[original_images_idx]["group_idx"].append(len(groups))
+            else:
+                images[original_images_idx]["group_idx"] = [len(groups)]
 
-          # groups 갱신
-          groups.append ({
-            "original_images_idx_list" :[original_images_idx],
-            "crop_path_list" : [crop_path],
-            "face_list" : [face2["face"]],
-            "face2_idx_list" : [face2_idx], 
-            "face1_idx_list" : [[]],
-            "cosine_similarity_list" : [-1]
-          })
+            # groups 갱신
+            groups.append({
+                "original_images_idx_list": [original_images_idx],
+                "crop_path_list": [crop_path],
+                "face_list": [face2["face"]],
+                "face2_idx_list": [face2_idx],
+                "face1_idx_list": [[]],
+                "cosine_similarity_list": [-1]
+            })
 
     print(len(groups))
 
     # group len이 1인건 group index -1 으로 변경
     print("사진 한장뿐인 그룹 목록")
     for group_idx, group in enumerate(groups):
-      if len(group["original_images_idx_list"]) == 1 :
-        print(group_idx)
-        images_idx = group["original_images_idx_list"][0]
-        images[images_idx]["group_idx"].remove(group_idx)
-        group_idx_list.remove(group_idx) 
+        if len(group["original_images_idx_list"]) == 1:
+            print(group_idx)
+            images_idx = group["original_images_idx_list"][0]
+            images[images_idx]["group_idx"].remove(group_idx)
+            group_idx_list.remove(group_idx)
 
-        if -1 not in images[images_idx]["group_idx"] :
-          images[images_idx]["group_idx"].append(-1)
+            if -1 not in images[images_idx]["group_idx"]:
+                images[images_idx]["group_idx"].append(-1)
 
     return groups, group_idx_list, images
 
 
-#----------------------------------------------------------
-#                        main 
-#----------------------------------------------------------
-def face_recognition(images):
+# ----------------------------------------------------------
+#                        main
+# ----------------------------------------------------------
+def run_face_recog(images):
     """
     FaceRecognition으로 FaceGrouping하는 main 함수.
 
@@ -322,66 +322,62 @@ def face_recognition(images):
 
     input_size = 112
     crop_base_folder = base_folder + "crop_images/"
-    #crop_base_folder = "face_recognition/crop_images/"
+    # crop_base_folder = "face_recognition/crop_images/"
     crop_folder = crop_base_folder + "crop/"
 
     if not os.path.isdir(crop_base_folder):
         os.mkdir(crop_base_folder)
 
     if os.path.exists(crop_folder):
-      shutil.rmtree(crop_folder)
-      os.mkdir(crop_folder)
-    else :
-      os.mkdir(crop_folder)
+        shutil.rmtree(crop_folder)
+        os.mkdir(crop_folder)
+    else:
+        os.mkdir(crop_folder)
 
-
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     #                      Step1. face detect
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     print("Step1. face detect\n")
 
     for idx, image in enumerate(images):
-      # s3에서 생성된 url을 request&response로 받아서 img로 넘기기
-      res = request.urlopen(image["url"]).read()
-      img = Image.open(BytesIO(res))
-      img = img.convert('RGB')
-      pixels = np.asarray(img)  
+        # s3에서 생성된 url을 request&response로 받아서 img로 넘기기
+        res = request.urlopen(image["url"]).read()
+        img = Image.open(BytesIO(res))
+        img = img.convert('RGB')
+        pixels = np.asarray(img)
 
-      # face detect 얼굴 탐지
-      images = face_crop(idx, pixels, images, crop_folder)
+        # face detect 얼굴 탐지
+        images = face_crop(idx, pixels, images, crop_folder)
 
-
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     #                      Step2. embedding
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     print("\n\n")
     print("Step2. embedding\n")
 
     faces, embeddings = get_embeddings(
-            data_root = crop_base_folder ,
-            model_root = "checkpoint/backbone_ir50_ms1m_epoch120.pth",
-            input_size = [input_size, input_size],
-        )
+        data_root=crop_base_folder,
+        model_root="checkpoint/backbone_ir50_ms1m_epoch120.pth",
+        input_size=[input_size, input_size],
+    )
     print("faces 길이 = ", len(faces))
-    print("embeddings 길이 = ", len(embeddings)) 
+    print("embeddings 길이 = ", len(embeddings))
 
-
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     #                      Step3. cos_similarity 계산
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     print("\n\n")
     print("Step3. cos_similarity 계산\n")
 
     cosine_similaritys = np.dot(embeddings, embeddings.T)
     cosine_similaritys = cosine_similaritys.clip(min=0, max=1)
 
-
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     #                      Step4. grouping
-    #----------------------------------------------------------
+    # ----------------------------------------------------------
     print("\n\n")
     print("Step4. grouping\n")
 
     groups, group_idx_list, images = grouping(faces, images, cosine_similaritys, cos_similarity_threshold)
-    
+
     return groups, group_idx_list, images
