@@ -69,6 +69,7 @@ def run_face_recog(images):
     #                      Step1. face detect
     # ----------------------------------------------------------
     print("Step1. face detect\n")
+    folder_no_face = True
 
     for idx, image in enumerate(images):
         # s3에서 생성된 url을 request&response로 받아서 img로 넘기기
@@ -78,7 +79,13 @@ def run_face_recog(images):
         pixels = np.asarray(img)
 
         # face detect 얼굴 탐지
-        images = face_crop(idx, pixels, images, crop_folder)
+        images, file_no_face = face_crop(idx, pixels, images, crop_folder)
+
+        if(folder_no_face==True and file_no_face==False):
+            folder_no_face==True
+
+    if(folder_no_face==True):
+        return -1, -1, -1
 
     # ----------------------------------------------------------
     #                      Step2. embedding
