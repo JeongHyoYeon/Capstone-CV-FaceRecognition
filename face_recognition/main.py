@@ -22,7 +22,7 @@ FILE = Path(__file__).resolve()
 BASE_PATH = FILE.parents[0]
 
 if str(BASE_PATH) not in sys.path:
-    sys.path.append(str(BASE_PATH))  # add YOLO_CLONE_PATH to PATH
+    sys.path.append(str(BASE_PATH))  # add BASE_PATH to PATH
 
 from face_crop import face_crop
 # from face_alignment import face_alignment
