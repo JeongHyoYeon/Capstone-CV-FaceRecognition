@@ -23,22 +23,28 @@ def face_grouping(faces, images, cosine_similaritys, cos_similarity_threshold):
       cos_similarity_threshold (float) : cosine similarity 몇이상을 같은 group으로 묶을지를 정하는 threshold
 
     Returns:
-      groups (list): [{
-                      "original_images_idx_list" : 해당 crop이미지의 원본 url이 담긴 urls idx
-                      "crop_path_list" : crop path
-                      "face_list" : crop한 얼굴 이미지 list
-                      "face2_idx_list" : all_faces의 idx, global_face_idx.
-                      "face1_idx_list" : group 이미지의 어떤 이미지랑 유사도가 0.4가 넘어서 들어왔는지. (빈 리스트이면 맨 처음 추가된 이미지인것.)
-                      "cosine_similarity_list" : 그 유사도가 얼마였는지 (-1 이면 맨 처음 추가된 이미지인 것)
+      groups (list of dictionary): [{
+                      "original_images_idx_list" : 해당 crop이미지의 원본이미지 idx
+                      "crop_path_list" : crop이미지가 저장된 경로들의 list
+                      "face_list" : crop이미지의 list
+                      "face2_idx_list" : crop이미지 idx의 list
+                      "face1_idx_list" : 해당 crop이미지가 해당 group에 추가될때 group내의 어떤 얼굴과 유사하다 생각되어 들어갔는지. 
+                                          그 crop얼굴이미지의 idx의 list. 
+                                         (빈 리스트이면 해당 그룹에 맨 처음 추가된 이미지인것)
+                      "cosine_similarity_list" : 그때 face2와 face1의 유사도가 얼마였는지. 그 유사도의 list. 
+                                                 (-1 이면 맨 처음 추가된 이미지인 것)
                     }]
 
-      images (list) : [{
+      group_idx_list (list of int) : 유효한 group의 idx만 들어있는 list. (한 group에 하나의 얼굴만 들어간 경우 해당 그룹은 유효하지 않다 판단)
+                                     (group idx 중 
+                                      -2 (얼굴이 없는 사진들이 들어가는 그룹), 
+                                      -1 (얼굴이 있는데 group에 넣기엔 너무 한장인 사진들이 들어가는 그룹)은 넣지 않았다)
+
+      images (list of dictionary) : [{
                       "id" : DB에서 이미지 id
                       "url" : S3에서 생성한 url
                       "group_idx" : [1, 4, 9] (해당 사진이 속한 group의 list를 전송), 얼굴이 없으면 [-2]. 얼굴이 있는데 group에 넣기엔 너무 한장일 경우 [-1].
-                    }]
-
-      group_idx_list (list) : 유효한 group idx만 들어있는 list. (ex group3이 이미지 한장 뿐이라 group-1로 변경됐다면 3은 group_idx_list에 없음.)
+                    }])
 
     """
     # face1 : 비교 기준이 되는 이미지
@@ -69,7 +75,7 @@ def face_grouping(faces, images, cosine_similaritys, cos_similarity_threshold):
                         images[original_images_idx]["group_idx"] = [group_idx]
 
                     # groups 갱신
-                    group["original_images_idx_list"].append(original_images_idx)  # dictionary에서 원래 url idx 찾아넣기
+                    group["original_images_idx_list"].append(original_images_idx)  
                     group["crop_path_list"].append(crop_path)
                     group["face_list"].append(face2["face"])
                     group["face2_idx_list"].append(face2_idx)
