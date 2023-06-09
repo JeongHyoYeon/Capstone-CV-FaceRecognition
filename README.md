@@ -1,51 +1,96 @@
-# Face Recognition 얼굴별 폴더 분류
+<div align="center">
+  <h1>
+    Face Recognition
+  </h1>
+</div>
 
 
-### ✅FaceRecognition.ipynb
-MTCNN 모델으로 face detect하여 얼굴 부분만 crop해서 crop/group_name 폴더에 저장한 후
-
-crop 폴더를 data load 하여 ArcFace를 이용해 embedding하고
-
-embedding으로 cosine similarity를 계산한 후
-
-이를 이용해 동일인물사진끼리 grouping하는 코드입니다.
+<img src="https://github.com/JeongHyoYeon/Capstone-CV-FaceRecognition/assets/90602936/93ce7cb5-2b96-432c-b810-96967ae5351f" width="45%" height="45%">
+<p>
+  첫번째 단계인 FaceDetection은 MTCNN모델으로 하나의 이미지에서 얼굴에 해당하는 모든 부분을 찾아 112x112 사이즈로 crop하였습니다.
+  두번째 단계인 FaceEmbedding 은 Arcface 손실함수를 이용한 Backbone모델로 얼굴이미지를 512 사이즈의 embedding vector로 변환하였습니다.
+</p>
 
 
-- <h4>[ver1] FaceRecognition_Floder.ipynb</h4> : input이 images/group_name/user_name 폴더일때 코드
+<img src="https://github.com/JeongHyoYeon/Capstone-CV-FaceRecognition/assets/90602936/f249e4de-d41f-4b06-8c65-2d39e1444773" width="45%" height="45%">
+<p>이렇게 embedding된 얼굴들을 t-SNE를 이용해 시각화 해보면 동일인물의 얼굴끼리 가까운 공간에 분포한다는 것을 확인할 수 있습니다.</p>
 
-- <h4>[ver2] FaceRecognition_URL.ipynb</h4> : Backend 서버에서 AWS s3에 이미지를 저장시키고 그 이미지 url을 dictionary 형태로 input으로 받아 Face Recognition 한 후 grouping 하는 코드
+<img src="https://github.com/JeongHyoYeon/Capstone-CV-FaceRecognition/assets/90602936/b94c465b-15eb-41ac-b0c9-3847433bad04" width="45%" height="45%">
+<p> 세번째 단계에서는 모든 얼굴의 embedding vector가 연결된 embeddings vector와 그것의 transpose vector를 내적하여 cosine similarity를 계산하였습니다. </p>
+<p> 네번째 단계에서는 crop된 얼굴이미지가 thresholod 값 0.55을 기준으로 유사하다면, original이미지들끼리 grouping하였습니다.</p>
 
-- <h4>[최종 ver] face_recognition.py </h4> : 리펙토링, 모듈화 마친 코드
+<img src="https://github.com/JeongHyoYeon/Capstone-CV-FaceRecognition/assets/90602936/95cc7b4f-31b3-4b9c-83ce-3c9eeba67ffb" width="45%" height="45%">
+<p>최종 결과를 보면 이렇게 동일인물의 사진끼리 하나의 폴더에 잘 들어가있는 것을 확인할 수 있습니다. </p>
+<p>이러한 얼굴인식AI는 얼굴 60장에 약 1분이 소요됩니다. </p>
 
-### ✅face_recognition.py 실행방법
-폴더구조를 아래처럼 두고
+<br>
+<div align="center">
+  <h1>
+    ipynb notebooks
+  </h1>
+</div>
+<h4>[ver1] FaceRecognition_Floder.ipynb</h4> 
+: [input] 이미지가 들은 폴더.
+
+<h4>[ver2] FaceRecognition_URL.ipynb</h4> 
+: [input] AWS s3에 사용자 이미지를 저장. 해당 이미지들의 url이 저장된 dictionary.
+
+<h4>[최종 ver] face_recognition.py </h4> 
+: 리펙토링, 모듈화 마친 코드
+
+<br>
+<div align="center">
+  <h1>
+    실행방법
+  </h1>
+</div>
+
 ```
-api
-ㄴ함수_호출할_파일.py
-ㄴface_recognition
-  ㄴface_recognition.py  
-  ㄴbackbone.py
-  ㄴcheckpoint
-    ㄴbackbone_ir50_ms1m_epoch120.pth
+from main import *
+
+groups, group_idx_list, images = run_face_recog(images)
 ```
 
-함수_호출할_파일.py에서 아래처럼 함수 호출로 실행.
 ```
-from face_recognition.face_recognition import face_recognition
+Args:
+      images (list) : [{
+                      "id" : DB에서 이미지 id
+                      "url" : S3에서 생성한 url
+                    }]
+Returns:
+      groups (list): [{
+                      "original_images_idx_list" : 해당 crop이미지의 원본 url이 담긴 urls idx
+                      "crop_path_list" : crop path
+                      "face_list" : crop한 얼굴 이미지 list
+                      "face2_idx_list" : all_faces의 idx, global_face_idx.
+                      "face1_idx_list" : group 이미지의 어떤 이미지랑 유사도가 threshold가 넘어서 들어왔는지. (빈 리스트이면 맨 처음 추가된 이미지인것.)
+                      "cosine_similarity_list" : 그 유사도가 얼마였는지 (-1 이면 맨 처음 추가된 이미지인 것)
+                    }]
 
-groups, images = face_recognition(images)
+      group_idx_list (list) : 유효한 group의 idx만 들어있는 list. (-2, -1은 넣지 않았다)
+
+      images (list) : [{
+                      "id" : DB에서 이미지 id
+                      "url" : S3에서 생성한 url
+                      "group_idx" : [1, 4, 9] (해당 사진이 속한 group의 list를 전송), 얼굴이 없으면 [-2]. 얼굴이 있는데 group에 넣기엔 너무 한장일 경우 [-1].
+                    }]
 ```
 
+<br>
+<div align="center">
+  <h1>
+    이용 모델
+  </h1>
+</div>
+<h4> MTCNN (face detection) </h4> [MTCNN github](https://github.com/ipazc/mtcnn)
+<h4> Arcface (face embedding) </h4> [Arcface github](https://github.com/spmallick/learnopencv/tree/master/Face-Recognition-with-ArcFace)
 
-### ✅이용 모델
-- MTCNN (face detection) [MTCNN github](https://github.com/ipazc/mtcnn)
-
-- Arcface (face embedding) [Arcface github](https://github.com/spmallick/learnopencv/tree/master/Face-Recognition-with-ArcFace)
-
-<img src="https://user-images.githubusercontent.com/90602936/233304516-94b137ba-91f3-42ec-bb92-5a07e371ae7a.png" width="60%" height="60%">
-
-
-### ✅결과 시각화
+<br>
+<div align="center">
+  <h1>
+    결과 시각화
+  </h1>
+</div>
 <h3>1. T-SNE를 이용해 embedding 결과의 분포 확인</h3>
 
 - ex1
@@ -65,15 +110,21 @@ groups, images = face_recognition(images)
 ![image](https://user-images.githubusercontent.com/90602936/233305817-1a66786c-10c8-42b1-93a0-bea51d3fdaae.png)
 
 
+<br>
+<div align="center">
+  <h1>
+    To Do
+  </h1>
+</div>
+face alignment 추가
+grouping algorithm 개선
 
-### ✅ Data Structure
-아래 내용과 동일한  .ipynb 파일에 docstring으로 정리되어있습니다.
-(노션에 있는거 옮기기)
 
-### ✅ To Do
-- 옆면, 얼굴 각도 심하게 돌아간 것에 대해서는 잘 안됨 -> face alignment 추가
-- grouping algorithm 개선
 
-### ✅참고 논문 & 깃허브
+<div align="center">
+  <h1>
+    참고자료
+  </h1>
+</div>
 [github](https://github.com/vinotharjun/FaceGrouping)
 
